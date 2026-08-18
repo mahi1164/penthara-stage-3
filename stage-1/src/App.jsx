@@ -1,3 +1,66 @@
+const DEFAULT_CATEGORIES = [
+  { id: 'food', name: 'Food', monthlyBudget: null },
+  { id: 'travel', name: 'Travel', monthlyBudget: null },
+  { id: 'rent', name: 'Rent', monthlyBudget: null },
+  { id: 'fun', name: 'Fun', monthlyBudget: null },
+  { id: 'other', name: 'Other', monthlyBudget: null },
+];
+
+const CATEGORY_MIGRATION_KEY = 'spendbook-category-migration-v1';
+
+function loadInitialData() {
+  const savedExpenses = JSON.parse(
+    localStorage.getItem('expenses') || '[]'
+  );
+
+  const migrationDone =
+    localStorage.getItem(CATEGORY_MIGRATION_KEY) === 'true';
+
+  if (migrationDone) {
+    const savedCategories = JSON.parse(
+      localStorage.getItem('categories') || '[]'
+    );
+
+    return {
+      expenses: savedExpenses,
+      categories: savedCategories,
+    };
+  }
+
+  const migratedExpenses = savedExpenses.map((expense) => {
+    const category = DEFAULT_CATEGORIES.find(
+      (item) => item.name === expense.category
+    );
+
+    const { category: oldCategory, ...rest } = expense;
+
+    return {
+      ...rest,
+      categoryId: category ? category.id : 'other',
+    };
+  });
+  localStorage.setItem(
+  'expenses',
+  JSON.stringify(migratedExpenses)
+);
+
+localStorage.setItem(
+  'categories',
+  JSON.stringify(DEFAULT_CATEGORIES)
+);
+
+localStorage.setItem(
+  CATEGORY_MIGRATION_KEY,
+  'true'
+);
+
+  return {
+    expenses: migratedExpenses,
+
+    categories: DEFAULT_CATEGORIES,
+  };
+}
+
 import { useEffect, useState } from "react";
 import Header from "./components/Header";
 import ExpenseForm from "./components/ExpenseForm";
@@ -5,22 +68,14 @@ import ExpenseList from "./components/ExpenseList";
 import "./App.css";
 
 function App() {
-  const [expenses, setExpenses] = useState([]);
+  const [initialData] = useState(loadInitialData);
+  const [expenses, setExpenses] = useState(initialData.expenses);
+  const [categories, setCategories] = useState(initialData.categories);
   const [editingExpense, setEditingExpense] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   
-  useEffect(() => {
 
-  const savedExpenses = JSON.parse(
-    localStorage.getItem("expenses")
-  );
-
-  if (savedExpenses) {
-    setExpenses(savedExpenses);
-  }
-
-}, []);
 
 
 
@@ -84,16 +139,14 @@ const total = currentMonthExpenses.reduce(
   0
 );
 
-const categories = ["Food", "Travel", "Rent", "Fun", "Other"];
+
 
 const categoryTotals = {};
 
 categories.forEach((category) => {
-
-  categoryTotals[category] = currentMonthExpenses
-    .filter((expense) => expense.category === category)
+  categoryTotals[category.id] = currentMonthExpenses
+    .filter((expense) => expense.categoryId === category.id)
     .reduce((sum, expense) => sum + expense.amount, 0);
-
 });
   return (
   <div className="app">
@@ -117,9 +170,9 @@ categories.forEach((category) => {
 
   {categories.map((category) => (
 
-    <p key={category}>
+    <p key={category.id}>
 
-      <strong>{category}</strong> : ₹ {categoryTotals[category].toLocaleString("en-IN", {
+      <strong>{category.name}</strong> : ₹ {categoryTotals[category.id].toLocaleString("en-IN", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })}
