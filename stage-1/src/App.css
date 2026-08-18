@@ -105,6 +105,12 @@ form button:hover{
     border-radius:6px;
     cursor:pointer;
 }
+.budget-warning {
+  margin-left: 8px;
+  color: #b91c1c;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
 
 .delete-btn:hover{
     background:#b91c1c;

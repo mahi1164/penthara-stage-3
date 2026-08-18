@@ -1,4 +1,4 @@
-function ExpenseList({ expenses, deleteExpense, totalExpenses, setEditingExpense, categories, }) {
+function ExpenseList({ expenses,allExpenses, deleteExpense, totalExpenses, setEditingExpense, categories, }) {
 
   return (
     <section className="expense-list">
@@ -26,9 +26,36 @@ function ExpenseList({ expenses, deleteExpense, totalExpenses, setEditingExpense
 
         expenses.map((expense) => {
 
-          const category = categories.find(
-          (item) => item.id === expense.categoryId
-    );
+  const category = categories.find(
+    (item) => item.id === expense.categoryId
+  );
+
+  const currentDate = new Date();
+  const expenseDate = new Date(expense.date);
+
+  const isCurrentMonth =
+    expenseDate.getMonth() === currentDate.getMonth() &&
+    expenseDate.getFullYear() === currentDate.getFullYear();
+
+  const categorySpent = allExpenses
+    .filter((item) => {
+      const itemDate = new Date(item.date);
+
+      return (
+        item.categoryId === expense.categoryId &&
+        itemDate.getMonth() === currentDate.getMonth() &&
+        itemDate.getFullYear() === currentDate.getFullYear()
+      );
+    })
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const monthlyBudget = Number(category?.monthlyBudget);
+
+const isOverBudget =
+  isCurrentMonth &&
+  Number.isFinite(monthlyBudget) &&
+  monthlyBudget > 0 &&
+  categorySpent > monthlyBudget;
 
   return (
 
@@ -46,6 +73,12 @@ function ExpenseList({ expenses, deleteExpense, totalExpenses, setEditingExpense
 
             <p>
               <strong>Category:</strong> {category?.name || "Unknown"}
+
+{isOverBudget && (
+  <span className="budget-warning">
+        Over budget
+  </span>
+)}
             </p>
 
             <p>

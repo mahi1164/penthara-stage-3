@@ -1,3 +1,11 @@
+import { useEffect, useState } from "react";
+import Header from "./components/Header";
+import ExpenseForm from "./components/ExpenseForm";
+import ExpenseList from "./components/ExpenseList";
+import CategorySettings from "./components/CategorySettings";
+import "./App.css";
+
+
 const DEFAULT_CATEGORIES = [
   { id: 'food', name: 'Food', monthlyBudget: null },
   { id: 'travel', name: 'Travel', monthlyBudget: null },
@@ -76,11 +84,7 @@ function loadInitialData() {
   };
 }
 
-import { useEffect, useState } from "react";
-import Header from "./components/Header";
-import ExpenseForm from "./components/ExpenseForm";
-import ExpenseList from "./components/ExpenseList";
-import "./App.css";
+
 
 function App() {
   const [initialData] = useState(loadInitialData);
@@ -91,7 +95,12 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState("");
   
 
-
+useEffect(() => {
+  localStorage.setItem(
+    "categories",
+    JSON.stringify(categories)
+  );
+}, [categories]);
 
 
 const deleteExpense = (id) => {
@@ -136,6 +145,7 @@ const filteredExpenses = expenses
   );
 
 
+
 const currentDate = new Date();
 
 const currentMonthExpenses = filteredExpenses.filter((expense) => {
@@ -167,6 +177,12 @@ categories.forEach((category) => {
   <div className="app">
 
     <Header />
+
+    <CategorySettings
+  categories={categories}
+  setCategories={setCategories}
+  expenses={expenses}
+/>
 
     <ExpenseForm
   expenses={expenses}
@@ -222,6 +238,7 @@ categories.forEach((category) => {
 
     <ExpenseList
       expenses={filteredExpenses}
+      allExpenses={expenses}
       deleteExpense={deleteExpense}
       totalExpenses={expenses.length}
       setEditingExpense={setEditingExpense}
