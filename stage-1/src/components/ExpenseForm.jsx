@@ -4,13 +4,14 @@ function ExpenseForm({
   expenses,
   setExpenses,
   editingExpense,
-  setEditingExpense
+  setEditingExpense,
+  categories,
 }) {
 
   const [formData, setFormData] = useState({
     description: "",
     amount: "",
-    category: "",
+    categoryId: "",
     date: "",
     note: "",
   });
@@ -18,7 +19,7 @@ function ExpenseForm({
   const [errors, setErrors] = useState({
   description: "",
   amount: "",
-  category: "",
+  categoryId: "",
   date: "",
 });
 
@@ -32,7 +33,7 @@ useEffect(() => {
     setErrors({
       description: "",
       amount: "",
-      category: "",
+      categoryId: "",
       date: "",
     });
 
@@ -46,7 +47,7 @@ useEffect(() => {
     setFormData({
       description: "",
       amount: "",
-      category: "",
+      categoryId: "",
       date: "",
       note: "",
     });
@@ -54,7 +55,7 @@ useEffect(() => {
     setErrors({
       description: "",
       amount: "",
-      category: "",
+      categoryId: "",
       date: "",
     });
 
@@ -85,7 +86,7 @@ const validateForm = (data) => {
   newErrors.amount =
     "Amount must be greater than 0.";
 }
-  if (data.category === "") {
+  if (data.categoryId === "") {
   newErrors.category =
     "Please select a category.";
 }
@@ -179,7 +180,7 @@ if (editingExpense) {
   setFormData({
     description: "",
     amount: "",
-    category: "",
+    categoryId: "",
     date: "",
     note: "",
   });
@@ -222,18 +223,19 @@ if (editingExpense) {
   </p>
 )}
 
-      <select
-        name="category"
-        value={formData.category}
-        onChange={handleChange}
-      >
-        <option value="">Select Category</option>
-        <option value="Food">Food</option>
-        <option value="Travel">Travel</option>
-        <option value="Rent">Rent</option>
-        <option value="Fun">Fun</option>
-        <option value="Other">Other</option>
-      </select>
+  <select
+  name="categoryId"
+  value={formData.categoryId}
+  onChange={handleChange}
+>
+  <option value="">Select Category</option>
+
+  {categories.map((category) => (
+    <option key={category.id} value={category.id}>
+      {category.name}
+    </option>
+  ))}
+</select>
 
       {errors.category && (
   <p className="error">
@@ -277,7 +279,7 @@ if (editingExpense) {
       setFormData({
         description: "",
         amount: "",
-        category: "",
+        categoryId: "",
         date: "",
         note: "",
       });
@@ -285,7 +287,7 @@ if (editingExpense) {
       setErrors({
         description: "",
         amount: "",
-        category: "",
+        categoryId: "",
         date: "",
       });
 

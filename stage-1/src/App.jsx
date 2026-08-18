@@ -13,14 +13,18 @@ function loadInitialData() {
     localStorage.getItem('expenses') || '[]'
   );
 
+  const savedCategories = JSON.parse(
+    localStorage.getItem('categories') || '[]'
+  );
+
   const migrationDone =
     localStorage.getItem(CATEGORY_MIGRATION_KEY) === 'true';
 
-  if (migrationDone) {
-    const savedCategories = JSON.parse(
-      localStorage.getItem('categories') || '[]'
-    );
+  const hasLegacyExpenses = savedExpenses.some(
+    (expense) => expense.category && !expense.categoryId
+  );
 
+  if (migrationDone && !hasLegacyExpenses) {
     return {
       expenses: savedExpenses,
       categories: savedCategories,
@@ -28,6 +32,12 @@ function loadInitialData() {
   }
 
   const migratedExpenses = savedExpenses.map((expense) => {
+    // Already using the new model
+    if (expense.categoryId) {
+      return expense;
+    }
+
+    // Still using the old Stage 1 category string
     const category = DEFAULT_CATEGORIES.find(
       (item) => item.name === expense.category
     );
@@ -39,25 +49,30 @@ function loadInitialData() {
       categoryId: category ? category.id : 'other',
     };
   });
+
+  const categoriesToSave =
+    savedCategories.length > 0
+      ? savedCategories
+      : DEFAULT_CATEGORIES;
+
   localStorage.setItem(
-  'expenses',
-  JSON.stringify(migratedExpenses)
-);
+    'expenses',
+    JSON.stringify(migratedExpenses)
+  );
 
-localStorage.setItem(
-  'categories',
-  JSON.stringify(DEFAULT_CATEGORIES)
-);
+  localStorage.setItem(
+    'categories',
+    JSON.stringify(categoriesToSave)
+  );
 
-localStorage.setItem(
-  CATEGORY_MIGRATION_KEY,
-  'true'
-);
+  localStorage.setItem(
+    CATEGORY_MIGRATION_KEY,
+    'true'
+  );
 
   return {
     expenses: migratedExpenses,
-
-    categories: DEFAULT_CATEGORIES,
+    categories: categoriesToSave,
   };
 }
 
@@ -111,7 +126,7 @@ const filteredExpenses = expenses
 
   const matchesCategory =
     selectedCategory === "" ||
-    expense.category === selectedCategory;
+    expense.categoryId === selectedCategory;
 
   return matchesSearch && matchesCategory;
 
@@ -158,6 +173,7 @@ categories.forEach((category) => {
   setExpenses={setExpenses}
   editingExpense={editingExpense}
   setEditingExpense={setEditingExpense}
+  categories={categories}
 />
     <section className="summary-card">
 
@@ -197,11 +213,11 @@ categories.forEach((category) => {
       onChange={(e) => setSelectedCategory(e.target.value)}
     >
       <option value="">All Categories</option>
-      <option value="Food">Food</option>
-      <option value="Travel">Travel</option>
-      <option value="Rent">Rent</option>
-      <option value="Fun">Fun</option>
-      <option value="Other">Other</option>
+      {categories.map((category) => (
+        <option key={category.id} value={category.id}>
+      {category.name}
+      </option>
+    ))}
     </select>
 
     <ExpenseList
@@ -209,6 +225,7 @@ categories.forEach((category) => {
       deleteExpense={deleteExpense}
       totalExpenses={expenses.length}
       setEditingExpense={setEditingExpense}
+      categories={categories}
     />
 
   </div>

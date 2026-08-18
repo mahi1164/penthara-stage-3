@@ -1,4 +1,4 @@
-function ExpenseList({ expenses, deleteExpense, totalExpenses, setEditingExpense }) {
+function ExpenseList({ expenses, deleteExpense, totalExpenses, setEditingExpense, categories, }) {
 
   return (
     <section className="expense-list">
@@ -23,7 +23,14 @@ function ExpenseList({ expenses, deleteExpense, totalExpenses, setEditingExpense
 
 ) : (
 
-        expenses.map((expense) => (
+
+        expenses.map((expense) => {
+
+          const category = categories.find(
+          (item) => item.id === expense.categoryId
+    );
+
+  return (
 
           <div
             key={expense.id}
@@ -38,7 +45,7 @@ function ExpenseList({ expenses, deleteExpense, totalExpenses, setEditingExpense
             </p>
 
             <p>
-              <strong>Category:</strong> {expense.category}
+              <strong>Category:</strong> {category?.name || "Unknown"}
             </p>
 
             <p>
@@ -70,11 +77,10 @@ function ExpenseList({ expenses, deleteExpense, totalExpenses, setEditingExpense
 
           </div>
 
-        ))
+         );
 
-      )}
-
-    </section>
+    }))
+  }</section>
   );
 }
 
