@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function CategorySettings({ categories, setCategories, expenses }) {
+function CategorySettings({ categories, setCategories, expenses, setExpenses }) {
   const [newName, setNewName] = useState("");
 
   const [editingId, setEditingId] = useState(null);
@@ -8,6 +8,9 @@ function CategorySettings({ categories, setCategories, expenses }) {
 
   const [budgetId, setBudgetId] = useState(null);
   const [budgetValue, setBudgetValue] = useState("");
+
+  const [deletingId, setDeletingId] = useState(null);
+  const [replacementId, setReplacementId] = useState("");
 
   function createCategory(event) {
     event.preventDefault();
@@ -84,6 +87,32 @@ function CategorySettings({ categories, setCategories, expenses }) {
     setBudgetId(null);
     setBudgetValue("");
   }
+
+  function deleteCategory(categoryId) {
+  if (!replacementId) return;
+
+  const updatedExpenses = expenses.map((expense) =>
+    expense.categoryId === categoryId
+      ? {
+          ...expense,
+          categoryId: replacementId,
+        }
+      : expense
+  );
+
+  setExpenses(updatedExpenses);
+
+  const updatedCategories = categories.filter(
+    (category) => category.id !== categoryId
+  );
+
+  setCategories(updatedCategories);
+
+  setDeletingId(null);
+  setReplacementId("");
+}
+
+
   const currentDate = new Date();
 
 const currentMonthExpenses = expenses.filter((expense) => {
@@ -181,6 +210,52 @@ const currentMonthExpenses = expenses.filter((expense) => {
               Set budget
             </button>
           )}
+          {deletingId === category.id ? (
+  <>
+    <select
+      value={replacementId}
+      onChange={(event) => setReplacementId(event.target.value)}
+    >
+      <option value="">Reassign expenses to...</option>
+
+      {categories
+        .filter((item) => item.id !== category.id)
+        .map((item) => (
+          <option key={item.id} value={item.id}>
+            {item.name}
+          </option>
+        ))}
+    </select>
+
+    <button
+  type="button"
+  disabled={!replacementId}
+  onClick={() => deleteCategory(category.id)}
+>
+  Confirm Delete
+</button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setDeletingId(null);
+        setReplacementId("");
+      }}
+    >
+      Cancel
+    </button>
+  </>
+) : (
+  <button
+    type="button"
+    onClick={() => {
+      setDeletingId(category.id);
+      setReplacementId("");
+    }}
+  >
+    Delete
+  </button>
+)}
 
           <span>
   Spent: ₹{spent.toLocaleString("en-IN")}

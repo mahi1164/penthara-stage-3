@@ -101,6 +101,12 @@ useEffect(() => {
     JSON.stringify(categories)
   );
 }, [categories]);
+useEffect(() => {
+  localStorage.setItem(
+    "expenses",
+    JSON.stringify(expenses)
+  );
+}, [expenses]);
 
 
 const deleteExpense = (id) => {
@@ -173,6 +179,8 @@ categories.forEach((category) => {
     .filter((expense) => expense.categoryId === category.id)
     .reduce((sum, expense) => sum + expense.amount, 0);
 });
+
+
   return (
   <div className="app">
 
@@ -182,6 +190,7 @@ categories.forEach((category) => {
   categories={categories}
   setCategories={setCategories}
   expenses={expenses}
+  setExpenses={setExpenses}
 />
 
     <ExpenseForm
