@@ -93,7 +93,16 @@ function App() {
   const [editingExpense, setEditingExpense] = useState(null);
   const [deletedExpense, setDeletedExpense] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearchTerm(searchTerm);
+  }, 300);
+
+  return () => clearTimeout(timer);
+}, [searchTerm]);
   
 
 useEffect(() => {
@@ -157,7 +166,7 @@ const filteredExpenses = expenses
   const matchesSearch =
     expense.description
       .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+      .includes(debouncedSearchTerm.toLowerCase());
 
   const matchesCategory =
     selectedCategory === "" ||
@@ -185,11 +194,88 @@ const currentMonthExpenses = filteredExpenses.filter((expense) => {
 
 });
 
+const statsCurrentMonthExpenses = expenses.filter((expense) => {
+  const expenseDate = new Date(expense.date);
+
+  return (
+    expenseDate.getMonth() === currentDate.getMonth() &&
+    expenseDate.getFullYear() === currentDate.getFullYear()
+  );
+});
+
 const total = currentMonthExpenses.reduce(
   (sum, expense) => sum + expense.amount,
   0
 );
 
+const statsTotal = statsCurrentMonthExpenses.reduce(
+  (sum, expense) => sum + expense.amount,
+  0
+);
+
+const statsCategoryTotals = {};
+
+statsCurrentMonthExpenses.forEach((expense) => {
+  statsCategoryTotals[expense.categoryId] =
+    (statsCategoryTotals[expense.categoryId] || 0) + expense.amount;
+});
+
+const topCategoryId = Object.keys(statsCategoryTotals).reduce(
+  (topId, categoryId) =>
+    statsCategoryTotals[categoryId] > statsCategoryTotals[topId]
+      ? categoryId
+      : topId,
+  null
+);
+
+const topCategory = categories.find(
+  (category) => category.id === topCategoryId
+);
+
+const totalBudget = categories.reduce(
+  (sum, category) =>
+    category.monthlyBudget !== null
+      ? sum + category.monthlyBudget
+      : sum,
+  0
+);
+
+const totalBudgetSpent = categories.reduce(
+  (sum, category) => {
+    if (category.monthlyBudget === null) {
+      return sum;
+    }
+
+    const categorySpent = statsCurrentMonthExpenses
+      .filter((expense) => expense.categoryId === category.id)
+      .reduce((categorySum, expense) => categorySum + expense.amount, 0);
+
+    return sum + categorySpent;
+  },
+  0
+);
+
+const budgetUsedPercent =
+  totalBudget === 0
+    ? 0
+    : (totalBudgetSpent / totalBudget) * 100;
+
+const overBudgetCategoryCount = categories.filter(
+  (category) => {
+    if (category.monthlyBudget === null) {
+      return false;
+    }
+
+    const categorySpent = statsCurrentMonthExpenses
+      .filter((expense) => expense.categoryId === category.id)
+      .reduce(
+        (sum, expense) => sum + expense.amount,
+        0
+      );
+
+    return categorySpent > category.monthlyBudget;
+  }
+).length;
 
 
 const categoryTotals = {};
@@ -220,6 +306,38 @@ categories.forEach((category) => {
   setEditingExpense={setEditingExpense}
   categories={categories}
 />
+  
+  
+  
+  <section className="stats-card">
+  <h2>Live Stats</h2>
+
+  <p>
+    <strong>Current-month total:</strong>{" "}
+    ₹{statsTotal.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}
+  </p>
+
+  <p>
+    <strong>Top category:</strong>{" "}
+    {topCategory ? topCategory.name : "No spending yet"}
+  </p>
+
+  <p>
+    <strong>Budget used:</strong>{" "}
+    {budgetUsedPercent.toFixed(1)}%
+  </p>
+
+  <p>
+    <strong>Over-budget categories:</strong>{" "}
+    {overBudgetCategoryCount}
+  </p>
+</section>
+  
+  
+  
     <section className="summary-card">
 
   <h2>Visible Current Month Summary</h2>
