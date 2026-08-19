@@ -91,6 +91,7 @@ function App() {
   const [expenses, setExpenses] = useState(initialData.expenses);
   const [categories, setCategories] = useState(initialData.categories);
   const [editingExpense, setEditingExpense] = useState(null);
+  const [deletedExpense, setDeletedExpense] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   
@@ -107,30 +108,49 @@ useEffect(() => {
     JSON.stringify(expenses)
   );
 }, [expenses]);
+useEffect(() => {
+  if (!deletedExpense) return;
 
+  const timer = setTimeout(() => {
+    setDeletedExpense(null);
+  }, 5000);
+
+  return () => clearTimeout(timer);
+}, [deletedExpense]);
 
 const deleteExpense = (id) => {
+  const expenseToDelete = expenses.find(
+    (expense) => expense.id === id
+  );
 
-    const updatedExpenses =
-        expenses.filter(
-            expense => expense.id !== id
-        );
+  if (!expenseToDelete) return;
 
-    setExpenses(updatedExpenses);
+  const updatedExpenses = expenses.filter(
+    (expense) => expense.id !== id
+  );
 
-    if (
-  editingExpense &&
-  editingExpense.id === id
-) {
-  setEditingExpense(null);
-}
+  setExpenses(updatedExpenses);
+  setDeletedExpense(expenseToDelete);
 
-    localStorage.setItem(
-        "expenses",
-        JSON.stringify(updatedExpenses)
-    );
-
+  if (
+    editingExpense &&
+    editingExpense.id === id
+  ) {
+    setEditingExpense(null);
+  }
 };
+
+const undoDelete = () => {
+  if (!deletedExpense) return;
+
+  setExpenses((currentExpenses) => [
+    deletedExpense,
+    ...currentExpenses,
+  ]);
+
+  setDeletedExpense(null);
+};
+
 const filteredExpenses = expenses
 .filter((expense) => {
 
@@ -253,6 +273,20 @@ categories.forEach((category) => {
       setEditingExpense={setEditingExpense}
       categories={categories}
     />
+
+    {deletedExpense && (
+  <div className="undo-toast">
+    <span>Expense deleted.</span>
+
+    <button
+      type="button"
+      onClick={undoDelete}
+    >
+      Undo
+    </button>
+  </div>
+)}
+
 
   </div>
 );
