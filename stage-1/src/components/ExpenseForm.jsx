@@ -86,11 +86,14 @@ const validateForm = (data) => {
   newErrors.amount =
     "Amount must be greater than 0.";
 }
-  if (data.categoryId === "") {
-  newErrors.category =
-    "Please select a category.";
-}
+  const categoryExists = categories.some(
+  (category) => category.id === data.categoryId
+);
 
+if (!categoryExists) {
+  newErrors.category =
+    "Please select a valid category.";
+}
   if (data.date === "") {
 
   newErrors.date =

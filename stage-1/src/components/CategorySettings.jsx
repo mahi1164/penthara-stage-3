@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function CategorySettings({ categories, setCategories, expenses, setExpenses }) {
+function CategorySettings({ categories, setCategories, expenses, setExpenses, currentMonthSpentByCategory }) {
   const [newName, setNewName] = useState("");
 
   const [editingId, setEditingId] = useState(null);
@@ -113,16 +113,6 @@ function CategorySettings({ categories, setCategories, expenses, setExpenses }) 
 }
 
 
-  const currentDate = new Date();
-
-const currentMonthExpenses = expenses.filter((expense) => {
-  const expenseDate = new Date(expense.date);
-
-  return (
-    expenseDate.getMonth() === currentDate.getMonth() &&
-    expenseDate.getFullYear() === currentDate.getFullYear()
-  );
-});
 
   return (
     <section className="category-settings">
@@ -142,9 +132,7 @@ const currentMonthExpenses = expenses.filter((expense) => {
       </form>
 
       {categories.map((category) => {
-  const spent = currentMonthExpenses
-    .filter((expense) => expense.categoryId === category.id)
-    .reduce((sum, expense) => sum + expense.amount, 0);
+      const spent = currentMonthSpentByCategory[category.id] || 0;
 
   return (
     <div key={category.id} className="category-setting-row">

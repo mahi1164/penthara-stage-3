@@ -1,4 +1,4 @@
-function ExpenseList({ expenses,allExpenses, deleteExpense, totalExpenses, setEditingExpense, categories, }) {
+function ExpenseList({ expenses,allExpenses, deleteExpense, totalExpenses, setEditingExpense, categories, currentMonthSpentByCategory,}) {
 
   return (
     <section className="expense-list">
@@ -37,17 +37,8 @@ function ExpenseList({ expenses,allExpenses, deleteExpense, totalExpenses, setEd
     expenseDate.getMonth() === currentDate.getMonth() &&
     expenseDate.getFullYear() === currentDate.getFullYear();
 
-  const categorySpent = allExpenses
-    .filter((item) => {
-      const itemDate = new Date(item.date);
-
-      return (
-        item.categoryId === expense.categoryId &&
-        itemDate.getMonth() === currentDate.getMonth() &&
-        itemDate.getFullYear() === currentDate.getFullYear()
-      );
-    })
-    .reduce((sum, item) => sum + item.amount, 0);
+  const categorySpent =
+  currentMonthSpentByCategory[expense.categoryId] || 0;
 
   const monthlyBudget = Number(category?.monthlyBudget);
 

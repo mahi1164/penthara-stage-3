@@ -32,6 +32,13 @@ function loadInitialData() {
     (expense) => expense.category && !expense.categoryId
   );
 
+  const categoriesToSave =
+  savedCategories.length > 0
+    ? savedCategories
+    : DEFAULT_CATEGORIES;
+
+  const fallbackCategory = categoriesToSave[0];
+
   if (migrationDone && !hasLegacyExpenses) {
     return {
       expenses: savedExpenses,
@@ -41,27 +48,30 @@ function loadInitialData() {
 
   const migratedExpenses = savedExpenses.map((expense) => {
     // Already using the new model
-    if (expense.categoryId) {
-      return expense;
-    }
+    const categoryExists = categoriesToSave.some(
+  (category) => category.id === expense.categoryId
+);
 
-    // Still using the old Stage 1 category string
-    const category = DEFAULT_CATEGORIES.find(
-      (item) => item.name === expense.category
-    );
+if (expense.categoryId && categoryExists) {
+  return expense;
+}
+
+  
+    const category = categoriesToSave.find(
+  (item) => item.name === expense.category
+);
 
     const { category: oldCategory, ...rest } = expense;
 
     return {
       ...rest,
-      categoryId: category ? category.id : 'other',
+      categoryId: category
+  ? category.id
+  : fallbackCategory.id,
     };
   });
 
-  const categoriesToSave =
-    savedCategories.length > 0
-      ? savedCategories
-      : DEFAULT_CATEGORIES;
+
 
   localStorage.setItem(
     'expenses',
@@ -203,6 +213,16 @@ const statsCurrentMonthExpenses = expenses.filter((expense) => {
   );
 });
 
+const currentMonthSpentByCategory = {};
+
+statsCurrentMonthExpenses.forEach((expense) => {
+  if (!currentMonthSpentByCategory[expense.categoryId]) {
+    currentMonthSpentByCategory[expense.categoryId] = 0;
+  }
+
+  currentMonthSpentByCategory[expense.categoryId] += expense.amount;
+});
+
 const total = currentMonthExpenses.reduce(
   (sum, expense) => sum + expense.amount,
   0
@@ -213,12 +233,7 @@ const statsTotal = statsCurrentMonthExpenses.reduce(
   0
 );
 
-const statsCategoryTotals = {};
-
-statsCurrentMonthExpenses.forEach((expense) => {
-  statsCategoryTotals[expense.categoryId] =
-    (statsCategoryTotals[expense.categoryId] || 0) + expense.amount;
-});
+const statsCategoryTotals = currentMonthSpentByCategory;
 
 const topCategoryId = Object.keys(statsCategoryTotals).reduce(
   (topId, categoryId) =>
@@ -246,11 +261,7 @@ const totalBudgetSpent = categories.reduce(
       return sum;
     }
 
-    const categorySpent = statsCurrentMonthExpenses
-      .filter((expense) => expense.categoryId === category.id)
-      .reduce((categorySum, expense) => categorySum + expense.amount, 0);
-
-    return sum + categorySpent;
+    return sum + (currentMonthSpentByCategory[category.id] || 0);
   },
   0
 );
@@ -266,12 +277,8 @@ const overBudgetCategoryCount = categories.filter(
       return false;
     }
 
-    const categorySpent = statsCurrentMonthExpenses
-      .filter((expense) => expense.categoryId === category.id)
-      .reduce(
-        (sum, expense) => sum + expense.amount,
-        0
-      );
+    const categorySpent =
+      currentMonthSpentByCategory[category.id] || 0;
 
     return categorySpent > category.monthlyBudget;
   }
@@ -297,6 +304,7 @@ categories.forEach((category) => {
   setCategories={setCategories}
   expenses={expenses}
   setExpenses={setExpenses}
+  currentMonthSpentByCategory={currentMonthSpentByCategory}
 />
 
     <ExpenseForm
@@ -390,6 +398,7 @@ categories.forEach((category) => {
       totalExpenses={expenses.length}
       setEditingExpense={setEditingExpense}
       categories={categories}
+      currentMonthSpentByCategory={currentMonthSpentByCategory}
     />
 
     {deletedExpense && (
