@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function CategorySettings({ categories, setCategories, expenses, setExpenses, currentMonthSpentByCategory }) {
+function CategorySettings({ categories, setCategories, expenses, setExpenses, currentMonthSpentByCategory, deletedExpense, setDeletedExpense, }) {
   const [newName, setNewName] = useState("");
 
   const [editingId, setEditingId] = useState(null);
@@ -99,6 +99,15 @@ function CategorySettings({ categories, setCategories, expenses, setExpenses, cu
         }
       : expense
   );
+  if (
+  deletedExpense &&
+  deletedExpense.categoryId === categoryId
+) {
+  setDeletedExpense({
+    ...deletedExpense,
+    categoryId: replacementId,
+  });
+}
 
   setExpenses(updatedExpenses);
 

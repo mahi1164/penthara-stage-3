@@ -162,6 +162,15 @@ const deleteExpense = (id) => {
 const undoDelete = () => {
   if (!deletedExpense) return;
 
+  const categoryStillExists = categories.some(
+    (category) => category.id === deletedExpense.categoryId
+  );
+
+  if (!categoryStillExists) {
+    setDeletedExpense(null);
+    return;
+  }
+
   setExpenses((currentExpenses) => [
     deletedExpense,
     ...currentExpenses,
@@ -305,6 +314,8 @@ categories.forEach((category) => {
   expenses={expenses}
   setExpenses={setExpenses}
   currentMonthSpentByCategory={currentMonthSpentByCategory}
+  deletedExpense={deletedExpense}
+  setDeletedExpense={setDeletedExpense}
 />
 
     <ExpenseForm
