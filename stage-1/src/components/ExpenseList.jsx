@@ -40,12 +40,12 @@ function ExpenseList({ expenses,allExpenses, deleteExpense, totalExpenses, setEd
   const categorySpent =
   currentMonthSpentByCategory[expense.categoryId] || 0;
 
-  const monthlyBudget = Number(category?.monthlyBudget);
+const monthlyBudget = category?.monthlyBudget;
 
 const isOverBudget =
   isCurrentMonth &&
+  monthlyBudget !== null &&
   Number.isFinite(monthlyBudget) &&
-  monthlyBudget > 0 &&
   categorySpent > monthlyBudget;
 
   return (

@@ -256,22 +256,20 @@ const topCategory = categories.reduce(
   null
 )?.category || null;
 
-const totalBudget = categories.reduce(
-  (sum, category) =>
-    category.monthlyBudget !== null
-      ? sum + category.monthlyBudget
-      : sum,
+const budgetedCategories = categories.filter(
+  (category) =>
+    category.monthlyBudget !== null &&
+    category.monthlyBudget > 0
+);
+
+const totalBudget = budgetedCategories.reduce(
+  (sum, category) => sum + category.monthlyBudget,
   0
 );
 
-const totalBudgetSpent = categories.reduce(
-  (sum, category) => {
-    if (category.monthlyBudget === null) {
-      return sum;
-    }
-
-    return sum + (currentMonthSpentByCategory[category.id] || 0);
-  },
+const totalBudgetSpent = budgetedCategories.reduce(
+  (sum, category) =>
+    sum + (currentMonthSpentByCategory[category.id] || 0),
   0
 );
 
