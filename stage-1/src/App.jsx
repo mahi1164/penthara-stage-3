@@ -222,15 +222,13 @@ const statsCurrentMonthExpenses = expenses.filter((expense) => {
   );
 });
 
-const currentMonthSpentByCategory = {};
+const currentMonthSpentByCategory =
+  statsCurrentMonthExpenses.reduce((totals, expense) => {
+    totals[expense.categoryId] =
+      (totals[expense.categoryId] || 0) + expense.amount;
 
-statsCurrentMonthExpenses.forEach((expense) => {
-  if (!currentMonthSpentByCategory[expense.categoryId]) {
-    currentMonthSpentByCategory[expense.categoryId] = 0;
-  }
-
-  currentMonthSpentByCategory[expense.categoryId] += expense.amount;
-});
+    return totals;
+  }, {});
 
 const total = currentMonthExpenses.reduce(
   (sum, expense) => sum + expense.amount,
@@ -242,19 +240,21 @@ const statsTotal = statsCurrentMonthExpenses.reduce(
   0
 );
 
-const statsCategoryTotals = currentMonthSpentByCategory;
+const topCategory = categories.reduce(
+  (top, category) => {
+    const spent = currentMonthSpentByCategory[category.id] || 0;
 
-const topCategoryId = Object.keys(statsCategoryTotals).reduce(
-  (topId, categoryId) =>
-    statsCategoryTotals[categoryId] > statsCategoryTotals[topId]
-      ? categoryId
-      : topId,
+    if (spent > (top?.spent || 0)) {
+      return {
+        category,
+        spent,
+      };
+    }
+
+    return top;
+  },
   null
-);
-
-const topCategory = categories.find(
-  (category) => category.id === topCategoryId
-);
+)?.category || null;
 
 const totalBudget = categories.reduce(
   (sum, category) =>
