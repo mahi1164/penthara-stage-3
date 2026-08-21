@@ -18,79 +18,79 @@ const CATEGORY_MIGRATION_KEY = 'spendbook-category-migration-v1';
 
 function loadInitialData() {
   const savedExpenses = JSON.parse(
-    localStorage.getItem('expenses') || '[]'
+    localStorage.getItem("expenses") || "[]"
   );
 
   const savedCategories = JSON.parse(
-    localStorage.getItem('categories') || '[]'
+    localStorage.getItem("categories") || "[]"
   );
 
-  const migrationDone =
-    localStorage.getItem(CATEGORY_MIGRATION_KEY) === 'true';
+  const categories =
+    savedCategories.length > 0
+      ? savedCategories
+      : DEFAULT_CATEGORIES;
 
-  const hasLegacyExpenses = savedExpenses.some(
-    (expense) => expense.category && !expense.categoryId
-  );
-
-  const categoriesToSave =
-  savedCategories.length > 0
-    ? savedCategories
-    : DEFAULT_CATEGORIES;
-
-  const fallbackCategory = categoriesToSave[0];
-
-  if (migrationDone && !hasLegacyExpenses) {
-    return {
-      expenses: savedExpenses,
-      categories: savedCategories,
-    };
-  }
+  const fallbackCategory = categories.find(
+    (category) => category.id === "other"
+  ) || categories[0];
 
   const migratedExpenses = savedExpenses.map((expense) => {
-    // Already using the new model
-    const categoryExists = categoriesToSave.some(
-  (category) => category.id === expense.categoryId
-);
+    // If the expense already has a valid categoryId,
+    // keep it exactly as it is.
+    const categoryExists = categories.some(
+      (category) => category.id === expense.categoryId
+    );
 
-if (expense.categoryId && categoryExists) {
-  return expense;
-}
+    if (categoryExists) {
+      return expense;
+    }
 
-  
-    const category = categoriesToSave.find(
-  (item) => item.name === expense.category
-);
+    // Legacy expense: convert old category name into categoryId.
+    const matchingCategory = categories.find(
+      (category) =>
+        category.name.toLowerCase() ===
+        String(expense.category || "").toLowerCase()
+    );
 
     const { category: oldCategory, ...rest } = expense;
 
     return {
       ...rest,
-      categoryId: category
-  ? category.id
-  : fallbackCategory.id,
+      categoryId:
+        matchingCategory?.id || fallbackCategory.id,
     };
   });
 
+  const expensesChanged =
+    JSON.stringify(savedExpenses) !==
+    JSON.stringify(migratedExpenses);
 
+  const categoriesChanged =
+    JSON.stringify(savedCategories) !==
+    JSON.stringify(categories);
 
-  localStorage.setItem(
-    'expenses',
-    JSON.stringify(migratedExpenses)
-  );
+  if (expensesChanged) {
+    localStorage.setItem(
+      "expenses",
+      JSON.stringify(migratedExpenses)
+    );
+  }
 
-  localStorage.setItem(
-    'categories',
-    JSON.stringify(categoriesToSave)
-  );
+  if (categoriesChanged) {
+    localStorage.setItem(
+      "categories",
+      JSON.stringify(categories)
+    );
+  }
 
   localStorage.setItem(
     CATEGORY_MIGRATION_KEY,
-    'true'
+    "true"
   );
 
   return {
     expenses: migratedExpenses,
-    categories: categoriesToSave,
+    categories,
   };
 }
 
