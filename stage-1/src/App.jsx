@@ -25,63 +25,76 @@ function loadInitialData() {
     localStorage.getItem("categories") || "[]"
   );
 
-  const categories =
-    savedCategories.length > 0
-      ? savedCategories
-      : DEFAULT_CATEGORIES;
+  const migrationDone =
+    localStorage.getItem(CATEGORY_MIGRATION_KEY) === "true";
 
-  const fallbackCategory = categories.find(
-    (category) => category.id === "other"
-  ) || categories[0];
+  const hasLegacyExpenses = savedExpenses.some(
+    (expense) => expense.category && !expense.categoryId
+  );
+
+  const categoriesToSave =
+    savedCategories.length > 0
+      ? [...savedCategories]
+      : [...DEFAULT_CATEGORIES];
+
+  // Nothing needs migrating
+  if (migrationDone && !hasLegacyExpenses) {
+    return {
+      expenses: savedExpenses,
+      categories: categoriesToSave,
+    };
+  }
 
   const migratedExpenses = savedExpenses.map((expense) => {
-    // If the expense already has a valid categoryId,
-    // keep it exactly as it is.
-    const categoryExists = categories.some(
+    // Already using a valid category ID
+    const categoryExists = categoriesToSave.some(
       (category) => category.id === expense.categoryId
     );
 
-    if (categoryExists) {
+    if (expense.categoryId && categoryExists) {
       return expense;
     }
 
-    // Legacy expense: convert old category name into categoryId.
-    const matchingCategory = categories.find(
-      (category) =>
-        category.name.toLowerCase() ===
-        String(expense.category || "").toLowerCase()
+    // Find the old Stage 1 category name
+    const legacyName = String(expense.category || "").trim();
+
+    let category = categoriesToSave.find(
+      (item) =>
+        item.name.toLowerCase() === legacyName.toLowerCase()
     );
+
+    // Unknown legacy category:
+    // create a real category instead of silently putting it in Other
+    if (!category) {
+      const newCategory = {
+        id: `legacy-${legacyName
+          .toLowerCase()
+          .replace(/\s+/g, "-")}`,
+        name: legacyName || "Uncategorized",
+        monthlyBudget: null,
+      };
+
+      categoriesToSave.push(newCategory);
+      category = newCategory;
+    }
 
     const { category: oldCategory, ...rest } = expense;
 
     return {
       ...rest,
-      categoryId:
-        matchingCategory?.id || fallbackCategory.id,
+      categoryId: category.id,
     };
   });
 
-  const expensesChanged =
-    JSON.stringify(savedExpenses) !==
-    JSON.stringify(migratedExpenses);
+  localStorage.setItem(
+    "expenses",
+    JSON.stringify(migratedExpenses)
+  );
 
-  const categoriesChanged =
-    JSON.stringify(savedCategories) !==
-    JSON.stringify(categories);
-
-  if (expensesChanged) {
-    localStorage.setItem(
-      "expenses",
-      JSON.stringify(migratedExpenses)
-    );
-  }
-
-  if (categoriesChanged) {
-    localStorage.setItem(
-      "categories",
-      JSON.stringify(categories)
-    );
-  }
+  localStorage.setItem(
+    "categories",
+    JSON.stringify(categoriesToSave)
+  );
 
   localStorage.setItem(
     CATEGORY_MIGRATION_KEY,
@@ -90,7 +103,7 @@ function loadInitialData() {
 
   return {
     expenses: migratedExpenses,
-    categories,
+    categories: categoriesToSave,
   };
 }
 
