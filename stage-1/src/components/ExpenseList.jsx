@@ -1,3 +1,10 @@
+import {
+  getCategoryById,
+  isCurrentMonth,
+  isOverBudget,
+} from "../utils/expenseHelpers";
+
+
 function ExpenseList({ expenses,allExpenses, deleteExpense, totalExpenses, setEditingExpense, categories, currentMonthSpentByCategory,}) {
 
   return (
@@ -26,27 +33,24 @@ function ExpenseList({ expenses,allExpenses, deleteExpense, totalExpenses, setEd
 
         expenses.map((expense) => {
 
-  const category = categories.find(
-    (item) => item.id === expense.categoryId
-  );
+  const category = getCategoryById(
+  categories,
+  expense.categoryId
+);
 
-  const currentDate = new Date();
-  const expenseDate = new Date(expense.date);
+const currentDate = new Date();
 
-  const isCurrentMonth =
-    expenseDate.getMonth() === currentDate.getMonth() &&
-    expenseDate.getFullYear() === currentDate.getFullYear();
-
-  const categorySpent =
+const categorySpent =
   currentMonthSpentByCategory[expense.categoryId] || 0;
 
-const monthlyBudget = category?.monthlyBudget;
+const expenseIsCurrentMonth = isCurrentMonth(
+  expense.date,
+  currentDate
+);
 
-const isOverBudget =
-  isCurrentMonth &&
-  monthlyBudget !== null &&
-  Number.isFinite(monthlyBudget) &&
-  categorySpent > monthlyBudget;
+const expenseIsOverBudget =
+  expenseIsCurrentMonth &&
+  isOverBudget(category, categorySpent);
 
   return (
 
@@ -65,9 +69,9 @@ const isOverBudget =
             <p>
               <strong>Category:</strong> {category?.name || "Unknown"}
 
-{isOverBudget && (
+{expenseIsOverBudget && (
   <span className="budget-warning">
-        Over budget
+    Over budget
   </span>
 )}
             </p>

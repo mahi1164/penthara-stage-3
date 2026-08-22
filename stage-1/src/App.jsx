@@ -3,6 +3,12 @@ import Header from "./components/Header";
 import ExpenseForm from "./components/ExpenseForm";
 import ExpenseList from "./components/ExpenseList";
 import CategorySettings from "./components/CategorySettings";
+import {
+  getCurrentMonthExpenses,
+  getSpentByCategory,
+  getCategoryById,
+  isOverBudget,
+} from "./utils/expenseHelpers";
 import "./App.css";
 
 
@@ -215,33 +221,20 @@ const filteredExpenses = expenses
 
 const currentDate = new Date();
 
-const currentMonthExpenses = filteredExpenses.filter((expense) => {
+const currentMonthExpenses = getCurrentMonthExpenses(
+  filteredExpenses,
+  currentDate
+);
 
-  const expenseDate = new Date(expense.date);
+const statsCurrentMonthExpenses = getCurrentMonthExpenses(
+  expenses,
+  currentDate
+);
 
-  return (
-    expenseDate.getMonth() === currentDate.getMonth() &&
-    expenseDate.getFullYear() === currentDate.getFullYear()
-  );
-
-});
-
-const statsCurrentMonthExpenses = expenses.filter((expense) => {
-  const expenseDate = new Date(expense.date);
-
-  return (
-    expenseDate.getMonth() === currentDate.getMonth() &&
-    expenseDate.getFullYear() === currentDate.getFullYear()
-  );
-});
-
-const currentMonthSpentByCategory =
-  statsCurrentMonthExpenses.reduce((totals, expense) => {
-    totals[expense.categoryId] =
-      (totals[expense.categoryId] || 0) + expense.amount;
-
-    return totals;
-  }, {});
+const currentMonthSpentByCategory = getSpentByCategory(
+  expenses,
+  currentDate
+);
 
 const total = currentMonthExpenses.reduce(
   (sum, expense) => sum + expense.amount,
@@ -253,36 +246,40 @@ const statsTotal = statsCurrentMonthExpenses.reduce(
   0
 );
 
-const topCategory = categories.reduce(
-  (top, category) => {
-    const spent = currentMonthSpentByCategory[category.id] || 0;
-
-    if (spent > (top?.spent || 0)) {
-      return {
-        category,
-        spent,
-      };
-    }
-
-    return top;
-  },
+const topCategoryId = Object.keys(
+  currentMonthSpentByCategory
+).reduce(
+  (topId, categoryId) =>
+    currentMonthSpentByCategory[categoryId] >
+    currentMonthSpentByCategory[topId]
+      ? categoryId
+      : topId,
   null
-)?.category || null;
+);
+
+const topCategory = getCategoryById(
+  categories,
+  topCategoryId
+);
+
+
 
 const budgetedCategories = categories.filter(
   (category) =>
     category.monthlyBudget !== null &&
-    category.monthlyBudget > 0
+    Number(category.monthlyBudget) > 0
 );
 
 const totalBudget = budgetedCategories.reduce(
-  (sum, category) => sum + category.monthlyBudget,
+  (sum, category) =>
+    sum + Number(category.monthlyBudget),
   0
 );
 
 const totalBudgetSpent = budgetedCategories.reduce(
   (sum, category) =>
-    sum + (currentMonthSpentByCategory[category.id] || 0),
+    sum +
+    (currentMonthSpentByCategory[category.id] || 0),
   0
 );
 
@@ -292,16 +289,11 @@ const budgetUsedPercent =
     : (totalBudgetSpent / totalBudget) * 100;
 
 const overBudgetCategoryCount = categories.filter(
-  (category) => {
-    if (category.monthlyBudget === null) {
-      return false;
-    }
-
-    const categorySpent =
-      currentMonthSpentByCategory[category.id] || 0;
-
-    return categorySpent > category.monthlyBudget;
-  }
+  (category) =>
+    isOverBudget(
+      category,
+      currentMonthSpentByCategory[category.id] || 0
+    )
 ).length;
 
 
