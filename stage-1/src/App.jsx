@@ -4,4 +4,4 @@ useEffect(() => {
   }, 300);
 
   return () => clearTimeout(timer);
-}, []); // << should depend on searchTerm, not empty array
+}, [searchTerm]); // << should depend on searchTerm, not empty array
