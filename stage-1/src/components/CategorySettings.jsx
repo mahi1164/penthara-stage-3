@@ -3,16 +3,14 @@ function saveRename(id) {
 
   if (!name) return;
 
-  const categoryToRename = categories.find(
-    (category) => category.id === id
+  setCategories(
+    categories.map((category)=>
+      category.id===id
+                   ?{...category, name}
+                   : category
+      )
   );
-
-  if (categoryToRename) {
-    categoryToRename.name = name; // << direct mutation
-  }
-
-  setCategories(categories); // << not triggering re-render reliably
-
+  //Now, no passing the same array reference to set and no direct object mutation
   setEditingId(null);
   setEditingName("");
 }
